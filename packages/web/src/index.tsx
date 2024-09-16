@@ -1,17 +1,15 @@
-// @ts-ignore
-import React from "react";
-// @ts-ignore
-import ReactDOM from "react-dom";
+import {createGlobalStore, ReduxProvider } from "@footballer/redux";
+import * as React from "react";
+import * as ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
-import {ProvideredStore} from "@footballer/redux";
+import storage from "redux-persist/lib/storage";
 
+const {store} = createGlobalStore(storage);
 
 ReactDOM.render(
     <React.StrictMode>
-        <ProvideredStore>
-            <App />
-        </ProvideredStore>
+        {ReduxProvider(App, store)()}
     </React.StrictMode>,
     document.getElementById("root")
 );

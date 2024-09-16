@@ -1,24 +1,40 @@
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import {combineReducers, configureStore} from "@reduxjs/toolkit";
 import toolkitSlice from "./toolkitSlice";
 import createSagaMiddleware from "redux-saga";
 import {RootSaga} from "./sagas";
+import {
+    persistStore,
+    persistReducer,
+    FLUSH,
+    REHYDRATE,
+    PAUSE,
+    PERSIST,
+    PURGE,
+    REGISTER,
+} from 'redux-persist';
 
-export const rootReducer = combineReducers( {
-  toolkit: toolkitSlice
-});
+export type AppRootStateType = ReturnType<typeof rootReducer>
 
-const sagaMiddleware = createSagaMiddleware();
+export const rootReducer = combineReducers({toolkit: toolkitSlice});
 
-export const store = configureStore( {
-  reducer: rootReducer,
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware({
-    serializableCheck: false,
-    thunk: false
-  }).concat(sagaMiddleware)
-});
+export const createGlobalStore = (persistStorage: any) => {
+    const sagaMiddleware = createSagaMiddleware();
+    const persistConfig = {key: 'root', storage: persistStorage};
+    const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-sagaMiddleware.run(RootSaga);
+    const store = configureStore({
+        reducer: persistedReducer,
+        middleware: (getDefaultMiddleware) => getDefaultMiddleware({
+            serializableCheck: {
+                ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+            }
+        }).concat(sagaMiddleware)
+    });
 
-export type AppRootStateType = ReturnType<typeof store.getState>
+    sagaMiddleware.run(RootSaga);
 
-export type AppDispatch = typeof store.dispatch
+    const persistor = persistStore(store);
+    return {store, persistor};
+};
+
+
